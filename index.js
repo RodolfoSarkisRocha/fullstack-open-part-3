@@ -1,5 +1,14 @@
 const express = require("express");
 const app = express();
+const morgan = require("morgan");
+const { token } = require("morgan");
+
+app.use(express.json());
+
+token("body", (req, res) => JSON.stringify(req.body));
+app.use(
+  morgan(":method :url :status :res[content-length] - :response-time ms :body")
+);
 
 let persons = [
   {
@@ -55,7 +64,6 @@ app.delete("/api/persons/:id", (request, response) => {
   persons = persons.filter((person) => person.id !== id);
   response.status(204).end();
 });
-
 
 // Generates a random id for the POST body
 const generateId = () => {
