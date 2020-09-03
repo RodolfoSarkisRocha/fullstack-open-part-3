@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 // Using build folder to serve frontend app 
-app.use(exprss.static('build'));
+app.use(express.static('build'));
 
 // Creating custom token to log request body to morgan console
 token("body", (req, res) => JSON.stringify(req.body));
