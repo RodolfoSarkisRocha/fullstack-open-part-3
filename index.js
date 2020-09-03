@@ -2,9 +2,15 @@ const express = require("express");
 const app = express();
 const morgan = require("morgan");
 const { token } = require("morgan");
+const cors = require('cors')
 
+app.use(cors());
 app.use(express.json());
 
+// Using build folder to serve frontend app 
+app.use(exprss.static('build'));
+
+// Creating custom token to log request body to morgan console
 token("body", (req, res) => JSON.stringify(req.body));
 app.use(
   morgan(":method :url :status :res[content-length] - :response-time ms :body")
@@ -114,7 +120,7 @@ app.post("/api/persons", (request, response) => {
   response.json(person);
 });
 
-const PORT = 3001;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
