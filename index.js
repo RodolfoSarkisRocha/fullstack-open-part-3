@@ -24,8 +24,16 @@ const persons = [
   },
 ];
 
+// Get all persons from phonebook
 app.get("/api/persons", (request, response) => {
   response.json(persons);
+});
+
+// Information about how many people phonebook has registered and the current time
+app.get("/info", (request, response) => {
+  const totalPersons = `Phonebook has info for ${persons.length} people`;
+  const date = new Date();
+  response.send(`<div>${totalPersons}</div><br><div>${date}</div>`);
 });
 
 const PORT = 3001;
