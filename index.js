@@ -2,13 +2,13 @@ const express = require("express");
 const app = express();
 const morgan = require("morgan");
 const { token } = require("morgan");
-const cors = require('cors')
+const cors = require("cors");
 
 app.use(cors());
 app.use(express.json());
 
-// Using build folder to serve frontend app 
-app.use(express.static('build'));
+// Using build folder to serve frontend app
+app.use(express.static("build"));
 
 // Creating custom token to log request body to morgan console
 token("body", (req, res) => JSON.stringify(req.body));
