@@ -41,7 +41,7 @@ app.get("/info", (request, response) => {
 
 // Get Person by ID
 app.get("/api/persons/:id", (request, response, next) => {
-  const id = Number(request.params.id);
+  const id = request.params.id;
   Person.findById(id)
     .then((note) => {
       if (note) response.json(note);
@@ -52,7 +52,7 @@ app.get("/api/persons/:id", (request, response, next) => {
 
 // Delete Person
 app.delete("/api/persons/:id", (request, response, next) => {
-  const id = Number(request.params.id);  
+  const id = request.params.id;  
   
   Person.findByIdAndRemove(id)
     .then((result) => response.status(204).end())
