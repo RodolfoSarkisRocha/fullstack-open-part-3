@@ -50,10 +50,29 @@ app.get("/api/persons/:id", (request, response, next) => {
     .catch((error) => next(error));
 });
 
+// Edit Person
+app.put("/api/persons/:id", (request, response, next) => {
+  const {
+    body: { name, number },
+    params: { id },
+  } = request;
+
+  const person = {
+    name,
+    number,
+  };
+
+  Person.findByIdAndUpdate(id, person, {
+    new: true,
+  }).then((updatedPerson) =>
+    response.json(updatedPerson).catch((error) => next(error))
+  );
+});
+
 // Delete Person
 app.delete("/api/persons/:id", (request, response, next) => {
-  const id = request.params.id;  
-  
+  const id = request.params.id;
+
   Person.findByIdAndRemove(id)
     .then((result) => response.status(204).end())
     .catch((error) => next(error));
@@ -77,19 +96,19 @@ const validateBody = (body, checkValues) => {
   return invalidValues;
 };
 
-const verifyIfNameExists = (name) => {
-  return new Promise((resolve, reject) => {
-    Person.find({})
-      .then((result) => {
-        const nameAlreadyExists = result.find((person) => person.name === name);
-        resolve(nameAlreadyExists);
-      })
-      .catch((err) => reject(err));
-  });
-};
+// const verifyIfNameExists = (name) => {
+//   return new Promise((resolve, reject) => {
+//     Person.find({})
+//       .then((result) => {
+//         const nameAlreadyExists = result.find((person) => person.name === name);
+//         resolve(nameAlreadyExists);
+//       })
+//       .catch((err) => reject(err));
+//   });
+// };
 
 // Persons POST
-app.post("/api/persons", async (request, response, next) => {
+app.post("/api/persons", (request, response, next) => {
   const { body } = request;
 
   const checkValues = ["name", "number"];
@@ -100,17 +119,6 @@ app.post("/api/persons", async (request, response, next) => {
   }
 
   const { name, number } = body;
-
-  const nameAlreadyExists = await verifyIfNameExists(name);
-
-  if (nameAlreadyExists) {
-    const { _id } = nameAlreadyExists;
-    Person.findByIdAndUpdate(_id, {...nameAlreadyExists, number}, {
-      new: true,
-    }).then((updatedPerson) =>
-      response.json(updatedPerson).catch((error) => next(error))
-    );
-  }
 
   const person = new Person({
     name,
