@@ -39,33 +39,35 @@ app.get("/info", (request, response) => {
   response.send(`<div>${totalPersons}</div><br><div>${date}</div>`);
 });
 
-// Get by ID
-app.get("/api/persons/:id", (request, response) => {
+// Get Person by ID
+app.get("/api/persons/:id", (request, response, next) => {
   const id = Number(request.params.id);
   Person.findById(id)
-    .then((note) => response.json(note))
-    .catch((err) =>
-      response.status(404).json({
-        error: err,
-        message: "person not found",
-      })
-    );
+    .then((note) => {
+      if (note) response.json(note);
+      else response.status(404).end();
+    })
+    .catch((error) => next(error));
 });
 
-// Delete
+// Delete Person
 app.delete("/api/persons/:id", (request, response) => {
   const id = Number(request.params.id);
   persons = persons.filter((person) => person.id !== id);
   response.status(204).end();
+
+  Person.findByIdAndRemove(id)
+    .then((result) => response.status(204).end())
+    .catch((error) => next(error));
 });
 
 // Generates a random id for the POST body
-const generateId = () => {
-  const randomId = Math.floor(Math.random() * Math.floor(999999999));
-  const idExists = persons.some((person) => person.id === randomId);
-  if (idExists) return generateId();
-  return randomId;
-};
+// const generateId = () => {
+//   const randomId = Math.floor(Math.random() * Math.floor(999999999));
+//   const idExists = persons.some((person) => person.id === randomId);
+//   if (idExists) return generateId();
+//   return randomId;
+// };
 
 // Validates the body of the persons POST
 const validateBody = (body, checkValues) => {
@@ -77,8 +79,19 @@ const validateBody = (body, checkValues) => {
   return invalidValues;
 };
 
+const verifyIfNameExists = (name) => {
+  return new Promise((resolve, reject) => {
+    Person.find({})
+      .then((result) => {
+        const nameAlreadyExists = result.find((person) => person.name === name);
+        resolve(nameAlreadyExists);
+      })
+      .catch((err) => reject(err));
+  });
+};
+
 // Persons POST
-app.post("/api/persons", (request, response) => {
+app.post("/api/persons", async (request, response, next) => {
   const { body } = request;
 
   const checkValues = ["name", "number"];
@@ -89,7 +102,18 @@ app.post("/api/persons", (request, response) => {
   }
 
   const { name, number } = body;
-  
+
+  const nameAlreadyExists = await verifyIfNameExists(name);
+
+  if (nameAlreadyExists) {
+    const { _id } = nameAlreadyExists;
+    Person.findByIdAndUpdate(_id, {...nameAlreadyExists, number}, {
+      new: true,
+    }).then((updatedPerson) =>
+      response.json(updatedPerson).catch((error) => next(error))
+    );
+  }
+
   const person = new Person({
     name,
     number,
@@ -97,6 +121,19 @@ app.post("/api/persons", (request, response) => {
 
   person.save().then((savedPerson) => response.json(savedPerson));
 });
+
+// Error Handlers
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message);
+
+  if (error.name === "CastError") {
+    return response.status(400).send({ error: "malformatted id" });
+  }
+
+  next(error);
+};
+
+app.use(errorHandler);
 
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
