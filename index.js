@@ -3,6 +3,10 @@ const app = express();
 const morgan = require("morgan");
 const { token } = require("morgan");
 const cors = require("cors");
+require("dotenv").config();
+
+const Person = require("./models/persons");
+const persons = require("./models/persons");
 
 app.use(cors());
 app.use(express.json());
@@ -16,32 +20,16 @@ app.use(
   morgan(":method :url :status :res[content-length] - :response-time ms :body")
 );
 
-let persons = [
-  {
-    name: "Arto Hellas",
-    number: "040-123456",
-    id: 1,
-  },
-  {
-    name: "Ada Lovelace",
-    number: "39-44-5323523",
-    id: 2,
-  },
-  {
-    name: "Dan Abramov",
-    number: "12-43-234345",
-    id: 3,
-  },
-  {
-    name: "Mary Poppendieck",
-    number: "39-23-6423122",
-    id: 4,
-  },
-];
-
 // Get all persons from phonebook
 app.get("/api/persons", (request, response) => {
-  response.json(persons);
+  Person.find({})
+    .then((persons) => response.json(persons))
+    .catch((err) => {
+      response.status(400).json({
+        error: err,
+        message: "could not fetch data from the server",
+      });
+    });
 });
 
 // Information about how many people phonebook has registered and the current time
@@ -54,14 +42,14 @@ app.get("/info", (request, response) => {
 // Get by ID
 app.get("/api/persons/:id", (request, response) => {
   const id = Number(request.params.id);
-  const person = persons.find((person) => person.id === id);
-
-  if (person) response.json(person);
-  else {
-    response.status(404).json({
-      error: "person not found",
-    });
-  }
+  Person.findById(id)
+    .then((note) => response.json(note))
+    .catch((err) =>
+      response.status(404).json({
+        error: err,
+        message: "person not found",
+      })
+    );
 });
 
 // Delete
@@ -89,9 +77,6 @@ const validateBody = (body, checkValues) => {
   return invalidValues;
 };
 
-// Validates body's name
-const validateName = (name) => persons.some((person) => person.name === name);
-
 // Persons POST
 app.post("/api/persons", (request, response) => {
   const { body } = request;
@@ -104,23 +89,16 @@ app.post("/api/persons", (request, response) => {
   }
 
   const { name, number } = body;
-  if (validateName(name)) {
-    return response.status(400).json({
-      error: "name must be unique",
-    });
-  }
-
-  const id = generateId();
-  const person = {
+  
+  const person = new Person({
     name,
     number,
-    id,
-  };
-  persons = persons.concat(person);
-  response.json(person);
+  });
+
+  person.save().then((savedPerson) => response.json(savedPerson));
 });
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
