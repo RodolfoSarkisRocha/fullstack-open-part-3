@@ -61,6 +61,7 @@ app.get("/api/people/:id", (request, response, next) => {
 });
 
 // Edit Person
+
 app.put("/api/people/:id", (request, response, next) => {
   const {
     body: { name, number },
@@ -72,9 +73,9 @@ app.put("/api/people/:id", (request, response, next) => {
     number,
   };
 
-  Person.findByIdAndUpdate(id, person, {
-    new: true,
-  }).then((updatedPerson) =>
+  // Options for moongose update
+  const opts = { runValidators: true, new: true };
+  Person.findByIdAndUpdate(id, person, opts).then((updatedPerson) =>
     response.json(updatedPerson).catch((error) => next(error))
   );
 });
@@ -147,9 +148,8 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === "CastError") {
     return response.status(400).send({ error: "malformatted id" });
-  }
-  else if(error.name === 'ValidationError') {
-    return response.status(400).send({error: error.message})
+  } else if (error.name === "ValidationError") {
+    return response.status(400).send({ error: error.message });
   }
 
   next(error);
